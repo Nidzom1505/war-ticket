@@ -1,0 +1,49 @@
+/* TicketWar – Global Styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-800 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-semibold text-sm
+           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500
+           shadow-sm hover:shadow-md;
+  }
+  .btn-accent {
+    @apply btn bg-accent-600 text-white hover:bg-accent-500 focus:ring-accent-500
+           shadow-sm hover:shadow-md;
+  }
+  .btn-danger {
+    @apply btn bg-danger-600 text-white hover:bg-danger-500 focus:ring-danger-500;
+  }
+  .btn-outline {
+    @apply btn border-2 border-primary-600 text-primary-600
+           hover:bg-primary-600 hover:text-white focus:ring-primary-500;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100
+           hover:shadow-md transition-shadow duration-200;
+  }
+  .input {
+    @apply w-full px-4 py-2.5 rounded-lg border border-gray-300 bg-white
+           text-gray-800 placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+           transition-colors duration-150;
+  }
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+}

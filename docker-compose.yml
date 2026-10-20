@@ -1,0 +1,131 @@
+# =============================================
+#  TicketWar – Docker Compose (Development)
+# =============================================
+
+services:
+  # ---------- Reverse Proxy ----------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ticketwar_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      frontend:
+        condition: service_started
+      api:
+        condition: service_started
+    networks:
+      - ticketwar_net
+    restart: unless-stopped
+
+  # ---------- Frontend (Vue 3 + Vite) ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ticketwar_frontend
+    expose:
+      - "5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules          # anonymous volume – keep installed deps
+    env_file:
+      - .env
+    networks:
+      - ticketwar_net
+    restart: unless-stopped
+
+  # ---------- API (Flask) ----------
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: ticketwar_api
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"                # juga expose ke host untuk debug langsung
+    volumes:
+      - ./api:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ticketwar_net
+    restart: unless-stopped
+
+  # ---------- Redis ----------
+  redis:
+    image: redis:7-alpine
+    container_name: ticketwar_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ticketwar_net
+    restart: unless-stopped
+
+  # ---------- Worker (Background Processor) ----------
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: ticketwar_worker
+    volumes:
+      - ./worker:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ticketwar_net
+    restart: unless-stopped
+
+  # ---------- Database (PostgreSQL) ----------
+  db:
+    image: postgres:16-alpine
+    container_name: ticketwar_db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - ticketwar_net
+    restart: unless-stopped
+
+# ---------- Named Volumes ----------
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+# ---------- Network ----------
+networks:
+  ticketwar_net:
+    name: ticketwar_net
+    driver: bridge
